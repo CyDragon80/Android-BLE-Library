@@ -1912,7 +1912,7 @@ abstract class BleManagerHandler extends RequestHandler {
 	@Deprecated
 	protected abstract void onServicesInvalidated();
 
-	void notifyDeviceDisconnected(@NonNull final BluetoothDevice device, final int status) {
+	void notifyDeviceDisconnected(@NonNull final BluetoothDevice device, final int reason) {
 		if (connectionState == BluetoothProfile.STATE_DISCONNECTED)
 			return;
 
@@ -1932,7 +1932,7 @@ abstract class BleManagerHandler extends RequestHandler {
 			close();
 			// Close will not notify the observer as the device was not connected.
 			postCallback(c -> c.onDeviceDisconnected(device));
-			postConnectionStateChange(o -> o.onDeviceFailedToConnect(device, status));
+			postConnectionStateChange(o -> o.onDeviceFailedToConnect(device, reason));
 			// ConnectRequest was already notified
 		} else if (userDisconnected) {
 			log(Log.INFO, () -> "Disconnected");
@@ -1943,7 +1943,7 @@ abstract class BleManagerHandler extends RequestHandler {
 			if (request == null || request.type != Request.Type.REMOVE_BOND)
 				close();
 			postCallback(c -> c.onDeviceDisconnected(device));
-			postConnectionStateChange(o -> o.onDeviceDisconnected(device, status));
+			postConnectionStateChange(o -> o.onDeviceDisconnected(device, reason));
 			if (request != null && request.type == Request.Type.DISCONNECT) {
 				request.notifySuccess(device);
 				this.request = null;
@@ -1954,9 +1954,9 @@ abstract class BleManagerHandler extends RequestHandler {
 			// When the device indicated disconnection, return the REASON_TERMINATE_PEER_USER.
 			// Otherwise, return REASON_LINK_LOSS.
 			// See: https://github.com/NordicSemiconductor/Android-BLE-Library/issues/284
-			final int reason = status == ConnectionObserver.REASON_TERMINATE_PEER_USER ?
+			final int newReason = reason == ConnectionObserver.REASON_TERMINATE_PEER_USER ?
 					ConnectionObserver.REASON_TERMINATE_PEER_USER : ConnectionObserver.REASON_LINK_LOSS;
-			postConnectionStateChange(o -> o.onDeviceDisconnected(device, reason));
+			postConnectionStateChange(o -> o.onDeviceDisconnected(device, newReason));
 			// We are not closing the connection here as the device should try to reconnect
 			// automatically.
 			// This may be only called when the shouldAutoConnect() method returned true.
@@ -2928,7 +2928,7 @@ abstract class BleManagerHandler extends RequestHandler {
 		}
 	};
 
-	private int mapDisconnectStatusToReason(final int status) {
+	public static int mapDisconnectStatusToReason(final int status) {
 		return switch (status) {
 			case GattError.GATT_CONN_TERMINATE_LOCAL_HOST ->
 					ConnectionObserver.REASON_TERMINATE_LOCAL_HOST;

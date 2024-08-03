@@ -744,7 +744,7 @@ public abstract class BleServerManager implements ILogger {
 				if (handler != null && handler.bluetoothGatt == null) {
 					// There is no client connection to the device.
 					// We have to notify disconnection manually.
-					handler.notifyDeviceDisconnected(device, status);
+					handler.notifyDeviceDisconnected(device, BleManagerHandler.mapDisconnectStatusToReason(status));
 				}
 				if (serverObserver != null)
 					serverObserver.onDeviceDisconnectedFromServer(device);
